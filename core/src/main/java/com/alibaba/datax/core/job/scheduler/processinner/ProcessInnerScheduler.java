@@ -22,8 +22,8 @@ public abstract class ProcessInnerScheduler extends AbstractScheduler {
 
     @Override
     public void startAllTaskGroup(List<Configuration> configurations) {
-        this.taskGroupContainerExecutorService = Executors
-                .newFixedThreadPool(configurations.size());
+        //根据配置信息，设置对应的线程池数量
+        this.taskGroupContainerExecutorService = Executors.newFixedThreadPool(configurations.size());
 
         for (Configuration taskGroupConfiguration : configurations) {
             TaskGroupContainerRunner taskGroupContainerRunner = newTaskGroupContainerRunner(taskGroupConfiguration);
@@ -50,8 +50,7 @@ public abstract class ProcessInnerScheduler extends AbstractScheduler {
     }
 
 
-    private TaskGroupContainerRunner newTaskGroupContainerRunner(
-            Configuration configuration) {
+    private TaskGroupContainerRunner newTaskGroupContainerRunner( Configuration configuration) {
         TaskGroupContainer taskGroupContainer = new TaskGroupContainer(configuration);
 
         return new TaskGroupContainerRunner(taskGroupContainer);

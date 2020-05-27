@@ -14,6 +14,12 @@ import com.alibaba.datax.core.util.ExceptionTracker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -21,16 +27,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * Engine是DataX入口类，该类负责初始化Job或者Task的运行容器，并运行插件的Job或者Task逻辑
  */
 public class Engine {
+
     private static final Logger LOG = LoggerFactory.getLogger(Engine.class);
 
     private static String RUNTIME_MODE;
@@ -47,9 +48,9 @@ public class Engine {
         LoadUtil.bind(allConf);
 
         boolean isJob = !("taskGroup".equalsIgnoreCase(allConf
-                .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
+                                                               .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
         //JobContainer会在schedule后再行进行设置和调整值
-        int channelNumber =0;
+        int channelNumber = 0;
         AbstractContainer container;
         long instanceId;
         int taskGroupId = -1;
@@ -74,21 +75,21 @@ public class Engine {
         boolean perfReportEnable = allConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_PERFLOG, true);
 
         //standlone模式的datax shell任务不进行汇报
-        if(instanceId == -1){
+        if (instanceId == -1) {
             perfReportEnable = false;
         }
 
         int priority = 0;
         try {
             priority = Integer.parseInt(System.getenv("SKYNET_PRIORITY"));
-        }catch (NumberFormatException e){
-            LOG.warn("prioriy set to 0, because NumberFormatException, the value is: "+System.getProperty("PROIORY"));
+        } catch (NumberFormatException e) {
+            LOG.warn("prioriy set to 0, because NumberFormatException, the value is: " + System.getProperty("PROIORY"));
         }
 
         Configuration jobInfoConfig = allConf.getConfiguration(CoreConstant.DATAX_JOB_JOBINFO);
         //初始化PerfTrace
         PerfTrace perfTrace = PerfTrace.getInstance(isJob, instanceId, taskGroupId, priority, traceEnable);
-        perfTrace.setJobInfo(jobInfoConfig,perfReportEnable,channelNumber);
+        perfTrace.setJobInfo(jobInfoConfig, perfReportEnable, channelNumber);
         container.start();
 
     }
@@ -102,12 +103,12 @@ public class Engine {
 
         filterSensitiveConfiguration(jobContent);
 
-        jobConfWithSetting.set("content",jobContent);
+        jobConfWithSetting.set("content", jobContent);
 
         return jobConfWithSetting.beautify();
     }
 
-    public static Configuration filterSensitiveConfiguration(Configuration configuration){
+    public static Configuration filterSensitiveConfiguration(Configuration configuration) {
         Set<String> keys = configuration.getKeys();
         for (final String key : keys) {
             boolean isSensitive = StringUtils.endsWithIgnoreCase(key, "password")
@@ -120,6 +121,7 @@ public class Engine {
     }
 
     public static void entry(final String[] args) throws Throwable {
+        // 命令行参数解析，解析为易于使用的方式
         Options options = new Options();
         options.addOption("job", true, "Job config.");
         options.addOption("jobid", true, "Job unique id.");
@@ -127,15 +129,17 @@ public class Engine {
 
         BasicParser parser = new BasicParser();
         CommandLine cl = parser.parse(options, args);
-
+        // 获取job配置文件路径
         String jobPath = cl.getOptionValue("job");
 
         // 如果用户没有明确指定jobid, 则 datax.py 会指定 jobid 默认值为-1
         String jobIdString = cl.getOptionValue("jobid");
         RUNTIME_MODE = cl.getOptionValue("mode");
 
+        //除了会解析job 还解析了Plugin、Core全部信息，最后configuration是所有的配置信息的集合
         Configuration configuration = ConfigParser.parse(jobPath);
 
+        // 解析jobid
         long jobId;
         if (!"-1".equalsIgnoreCase(jobIdString)) {
             jobId = Long.parseLong(jobIdString);
@@ -145,7 +149,7 @@ public class Engine {
             String dsJobUrlPatternString = "/inner/job/(\\d{1,})/config";
             String dsTaskGroupUrlPatternString = "/inner/job/(\\d{1,})/taskGroup/";
             List<String> patternStringList = Arrays.asList(dscJobUrlPatternString,
-                    dsJobUrlPatternString, dsTaskGroupUrlPatternString);
+                                                           dsJobUrlPatternString, dsTaskGroupUrlPatternString);
             jobId = parseJobIdFromUrl(patternStringList, jobPath);
         }
 
@@ -167,6 +171,8 @@ public class Engine {
         LOG.debug(configuration.toJSON());
 
         ConfigurationValidate.doValidate(configuration);
+
+        //完成了上面的参数校验，进程信息打印后， 这里开始进入到主流程
         Engine engine = new Engine();
         engine.start(configuration);
     }
@@ -175,7 +181,7 @@ public class Engine {
     /**
      * -1 表示未能解析到 jobId
      *
-     *  only for dsc & ds & datax 3 update
+     * only for dsc & ds & datax 3 update
      */
     private static long parseJobIdFromUrl(List<String> patternStringList, String url) {
         long result = -1;
@@ -201,6 +207,7 @@ public class Engine {
     public static void main(String[] args) throws Exception {
         int exitCode = 0;
         try {
+            // 程序入口
             Engine.entry(args);
         } catch (Throwable e) {
             exitCode = 1;

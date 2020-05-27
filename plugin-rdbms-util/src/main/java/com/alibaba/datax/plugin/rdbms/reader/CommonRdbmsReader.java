@@ -98,8 +98,7 @@ public class CommonRdbmsReader {
         }
 
 
-        public List<Configuration> split(Configuration originalConfig,
-                                         int adviceNumber) {
+        public List<Configuration> split(Configuration originalConfig, int adviceNumber) {
             return ReaderSplitUtil.doSplit(originalConfig, adviceNumber);
         }
 

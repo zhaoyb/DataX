@@ -132,16 +132,20 @@ def generateJobConfigTemplate(reader, writer):
     }
     readerTemplatePath = "%s/plugin/reader/%s/plugin_job_template.json" % (DATAX_HOME,reader)
     writerTemplatePath = "%s/plugin/writer/%s/plugin_job_template.json" % (DATAX_HOME,writer)
+    # 读取reader文件，获取reader json对象
     try:
       readerPar = readPluginTemplate(readerTemplatePath);
     except Exception, e:
-       print "Read reader[%s] template error: can\'t find file %s" % (reader,readerTemplatePath)
+       print "Read reader[%s] template error: can\'t find file %s" % (reader,readerTemplatePath)、
+    # 读取write文件，获取write json对象
     try:
       writerPar = readPluginTemplate(writerTemplatePath);
     except Exception, e:
       print "Read writer[%s] template error: : can\'t find file %s" % (writer,writerTemplatePath)
+    # 组合为一个对象
     jobTemplate['job']['content'][0]['reader'] = readerPar;
     jobTemplate['job']['content'][0]['writer'] = writerPar;
+    # 这里结合了reader和writer,打印出最终的配置文件
     print json.dumps(jobTemplate, indent=4, sort_keys=True)
 
 def readPluginTemplate(plugin):
@@ -162,6 +166,7 @@ def isUrl(path):
 
 def buildStartCommand(options, args):
     commandMap = {}
+    # jvm参数
     tempJVMCommand = DEFAULT_JVM
     if options.jvmParameters:
         tempJVMCommand = tempJVMCommand + " " + options.jvmParameters
@@ -173,6 +178,7 @@ def buildStartCommand(options, args):
     if options.loglevel:
         tempJVMCommand = tempJVMCommand + " " + ("-Dloglevel=%s" % (options.loglevel))
 
+    # 程序运行模式
     if options.mode:
         commandMap["mode"] = options.mode
 
@@ -194,6 +200,7 @@ def buildStartCommand(options, args):
     commandMap["params"] = jobParams
     commandMap["job"] = jobResource
 
+    # 这里根据参数，启动jvm进程
     return Template(ENGINE_COMMAND).substitute(**commandMap)
 
 
@@ -207,13 +214,17 @@ Copyright (C) 2010-2017, Alibaba Group. All Rights Reserved.
 
 
 if __name__ == "__main__":
+    # 打印版本信息
     printCopyright()
+    # 获取参数
     parser = getOptionParser()
     options, args = parser.parse_args(sys.argv[1:])
     if options.reader is not None and options.writer is not None:
+        # 参数正常 走下面的逻辑，这里只是读取参数并打印打出
         generateJobConfigTemplate(options.reader,options.writer)
         sys.exit(RET_STATE['OK'])
     if len(args) != 1:
+        # 参数异常 退出
         parser.print_help()
         sys.exit(RET_STATE['FAIL'])
 

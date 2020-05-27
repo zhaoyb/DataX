@@ -23,14 +23,19 @@ public final class ConfigParser {
      * 指定Job配置路径，ConfigParser会解析Job、Plugin、Core全部信息，并以Configuration返回
      */
     public static Configuration parse(final String jobPath) {
+        //1. 解析json文件， 这里解析的是job.json
         Configuration configuration = ConfigParser.parseJobConfig(jobPath);
 
+        //2. 这里合并core.json，就是把core.json合并到了job.json
         configuration.merge(
                 ConfigParser.parseCoreConfig(CoreConstant.DATAX_CONF_PATH),
                 false);
+
         // todo config优化，只捕获需要的plugin
+        // 读取job.content[0].reader.name
         String readerPluginName = configuration.getString(
                 CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
+        //读取job.content[0].writer.name
         String writerPluginName = configuration.getString(
                 CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
 
@@ -50,7 +55,9 @@ public final class ConfigParser {
         if(StringUtils.isNotEmpty(postHandlerName)) {
             pluginList.add(postHandlerName);
         }
+
         try {
+            //获取需要的插件信息type path，同时合并配置到job.json
             configuration.merge(parsePluginConfig(new ArrayList<String>(pluginList)), false);
         }catch (Exception e){
             //吞掉异常，保持log干净。这里message足够。
@@ -149,11 +156,13 @@ public final class ConfigParser {
     public static Configuration parseOnePluginConfig(final String path,
                                                      final String type,
                                                      Set<String> pluginSet, List<String> wantPluginNames) {
+        //每个插件文件夹下的plugin.json
         String filePath = path + File.separator + "plugin.json";
         Configuration configuration = Configuration.from(new File(filePath));
-
+        //从plugin.json获取参数
         String pluginPath = configuration.getString("path");
         String pluginName = configuration.getString("name");
+
         if(!pluginSet.contains(pluginName)) {
             pluginSet.add(pluginName);
         } else {

@@ -3,12 +3,18 @@ package com.alibaba.datax.core.container.util;
 import com.alibaba.datax.common.constant.CommonConstant;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.container.CoreConstant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.*;
-
 public final class JobAssignUtil {
+
     private JobAssignUtil() {
     }
 
@@ -23,32 +29,28 @@ public final class JobAssignUtil {
         List<Configuration> contentConfig = configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
         Validate.isTrue(contentConfig.size() > 0, "框架获得的切分后的 Job 无内容.");
 
-        Validate.isTrue(channelNumber > 0 && channelsPerTaskGroup > 0,
-                "每个channel的平均task数[averTaskPerChannel]，channel数目[channelNumber]，每个taskGroup的平均channel数[channelsPerTaskGroup]都应该为正数");
+        Validate.isTrue(channelNumber > 0 && channelsPerTaskGroup > 0, "每个channel的平均task数[averTaskPerChannel]，channel数目[channelNumber]，每个taskGroup的平均channel数[channelsPerTaskGroup]都应该为正数");
 
         int taskGroupNumber = (int) Math.ceil(1.0 * channelNumber / channelsPerTaskGroup);
 
         Configuration aTaskConfig = contentConfig.get(0);
 
-        String readerResourceMark = aTaskConfig.getString(CoreConstant.JOB_READER_PARAMETER + "." +
-                CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
-        String writerResourceMark = aTaskConfig.getString(CoreConstant.JOB_WRITER_PARAMETER + "." +
-                CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
+        String readerResourceMark = aTaskConfig.getString(CoreConstant.JOB_READER_PARAMETER + "." + CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
+        String writerResourceMark = aTaskConfig.getString(CoreConstant.JOB_WRITER_PARAMETER + "." + CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
 
-        boolean hasLoadBalanceResourceMark = StringUtils.isNotBlank(readerResourceMark) ||
-                StringUtils.isNotBlank(writerResourceMark);
+        boolean hasLoadBalanceResourceMark = StringUtils.isNotBlank(readerResourceMark) || StringUtils.isNotBlank(writerResourceMark);
 
         if (!hasLoadBalanceResourceMark) {
             // fake 一个固定的 key 作为资源标识（在 reader 或者 writer 上均可，此处选择在 reader 上进行 fake）
             for (Configuration conf : contentConfig) {
-                conf.set(CoreConstant.JOB_READER_PARAMETER + "." +
-                        CommonConstant.LOAD_BALANCE_RESOURCE_MARK, "aFakeResourceMarkForLoadBalance");
+                conf.set(CoreConstant.JOB_READER_PARAMETER + "." + CommonConstant.LOAD_BALANCE_RESOURCE_MARK, "aFakeResourceMarkForLoadBalance");
             }
             // 是为了避免某些插件没有设置 资源标识 而进行了一次随机打乱操作
             Collections.shuffle(contentConfig, new Random(System.currentTimeMillis()));
         }
 
         LinkedHashMap<String, List<Integer>> resourceMarkAndTaskIdMap = parseAndGetResourceMarkAndTaskIdMap(contentConfig);
+
         List<Configuration> taskGroupConfig = doAssign(resourceMarkAndTaskIdMap, configuration, taskGroupNumber);
 
         // 调整 每个 taskGroup 对应的 Channel 个数（属于优化范畴）
