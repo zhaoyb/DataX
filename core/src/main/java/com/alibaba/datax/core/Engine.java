@@ -14,7 +14,6 @@ import com.alibaba.datax.core.util.ExceptionTracker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -39,7 +38,7 @@ public class Engine {
     /* check job model (job/task) first */
     public void start(Configuration allConf) {
 
-        // 绑定column转换信息
+        // 绑定column转换格式信息
         ColumnCast.bind(allConf);
 
         /**
@@ -47,8 +46,7 @@ public class Engine {
          */
         LoadUtil.bind(allConf);
 
-        boolean isJob = !("taskGroup".equalsIgnoreCase(allConf
-                                                               .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
+        boolean isJob = !("taskGroup".equalsIgnoreCase(allConf.getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
         //JobContainer会在schedule后再行进行设置和调整值
         int channelNumber = 0;
         AbstractContainer container;
@@ -57,17 +55,13 @@ public class Engine {
         if (isJob) {
             allConf.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, RUNTIME_MODE);
             container = new JobContainer(allConf);
-            instanceId = allConf.getLong(
-                    CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
+            instanceId = allConf.getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
 
         } else {
             container = new TaskGroupContainer(allConf);
-            instanceId = allConf.getLong(
-                    CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
-            taskGroupId = allConf.getInt(
-                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
-            channelNumber = allConf.getInt(
-                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
+            instanceId = allConf.getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+            taskGroupId = allConf.getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+            channelNumber = allConf.getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
         }
 
         //缺省打开perfTrace
@@ -79,6 +73,7 @@ public class Engine {
             perfReportEnable = false;
         }
 
+        //优先级
         int priority = 0;
         try {
             priority = Integer.parseInt(System.getenv("SKYNET_PRIORITY"));

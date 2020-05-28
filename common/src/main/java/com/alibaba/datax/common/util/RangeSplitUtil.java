@@ -14,8 +14,7 @@ public final class RangeSplitUtil {
     public static String[] doAsciiStringSplit(String left, String right, int expectSliceNumber) {
         int radix = 128;
 
-        BigInteger[] tempResult = doBigIntegerSplit(stringToBigInteger(left, radix),
-                stringToBigInteger(right, radix), expectSliceNumber);
+        BigInteger[] tempResult = doBigIntegerSplit(stringToBigInteger(left, radix), stringToBigInteger(right, radix), expectSliceNumber);
         String[] result = new String[tempResult.length];
 
         //处理第一个字符串（因为：在转换为数字，再还原的时候，如果首字符刚好是 basic,则不知道应该添加多少个 basic）

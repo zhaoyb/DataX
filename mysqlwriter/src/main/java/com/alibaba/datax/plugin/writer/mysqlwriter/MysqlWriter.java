@@ -6,20 +6,21 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
-
 import java.util.List;
 
 
 //TODO writeProxy
 public class MysqlWriter extends Writer {
+
     private static final DataBaseType DATABASE_TYPE = DataBaseType.MySql;
 
     public static class Job extends Writer.Job {
+
         private Configuration originalConfig = null;
         private CommonRdbmsWriter.Job commonRdbmsWriterJob;
 
         @Override
-        public void preCheck(){
+        public void preCheck() {
             this.init();
             this.commonRdbmsWriterJob.writerPreCheck(this.originalConfig, DATABASE_TYPE);
         }
@@ -58,6 +59,7 @@ public class MysqlWriter extends Writer {
     }
 
     public static class Task extends Writer.Task {
+
         private Configuration writerSliceConfig;
         private CommonRdbmsWriter.Task commonRdbmsWriterTask;
 
@@ -75,8 +77,7 @@ public class MysqlWriter extends Writer {
 
         //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver) {
-            this.commonRdbmsWriterTask.startWrite(recordReceiver, this.writerSliceConfig,
-                    super.getTaskPluginCollector());
+            this.commonRdbmsWriterTask.startWrite(recordReceiver, this.writerSliceConfig, super.getTaskPluginCollector());
         }
 
         @Override
@@ -90,7 +91,7 @@ public class MysqlWriter extends Writer {
         }
 
         @Override
-        public boolean supportFailOver(){
+        public boolean supportFailOver() {
             String writeMode = writerSliceConfig.getString(Key.WRITE_MODE);
             return "replace".equalsIgnoreCase(writeMode);
         }
