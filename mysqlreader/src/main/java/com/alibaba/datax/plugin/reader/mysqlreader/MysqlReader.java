@@ -6,16 +6,16 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class MysqlReader extends Reader {
 
     private static final DataBaseType DATABASE_TYPE = DataBaseType.MySql;
 
     public static class Job extends Reader.Job {
+
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
 
@@ -38,9 +38,9 @@ public class MysqlReader extends Reader {
         }
 
         @Override
-        public void preCheck(){
+        public void preCheck() {
             init();
-            this.commonRdbmsReaderJob.preCheck(this.originalConfig,DATABASE_TYPE);
+            this.commonRdbmsReaderJob.preCheck(this.originalConfig, DATABASE_TYPE);
 
         }
 
@@ -69,7 +69,7 @@ public class MysqlReader extends Reader {
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(DATABASE_TYPE,super.getTaskGroupId(), super.getTaskId());
+            this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(DATABASE_TYPE, super.getTaskGroupId(), super.getTaskId());
             this.commonRdbmsReaderTask.init(this.readerSliceConfig);
 
         }
@@ -78,8 +78,7 @@ public class MysqlReader extends Reader {
         public void startRead(RecordSender recordSender) {
             int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
 
-            this.commonRdbmsReaderTask.startRead(this.readerSliceConfig, recordSender,
-                    super.getTaskPluginCollector(), fetchSize);
+            this.commonRdbmsReaderTask.startRead(this.readerSliceConfig, recordSender, super.getTaskPluginCollector(), fetchSize);
         }
 
         @Override

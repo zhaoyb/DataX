@@ -14,6 +14,11 @@ import com.alibaba.datax.core.util.ExceptionTracker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -39,7 +44,7 @@ public class Engine {
     /* check job model (job/task) first */
     public void start(Configuration allConf) {
 
-        // 绑定column转换信息
+        // 绑定column转换格式信息
         ColumnCast.bind(allConf);
 
         /**
@@ -74,6 +79,7 @@ public class Engine {
             perfReportEnable = false;
         }
 
+        //优先级
         int priority = 0;
         try {
             priority = Integer.parseInt(System.getenv("SKYNET_PRIORITY"));

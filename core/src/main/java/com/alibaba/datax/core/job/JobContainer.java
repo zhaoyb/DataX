@@ -51,8 +51,7 @@ public class JobContainer extends AbstractContainer {
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat(
             "yyyy-MM-dd HH:mm:ss");
 
-    private ClassLoaderSwapper classLoaderSwapper = ClassLoaderSwapper
-            .newCurrentThreadClassLoaderSwapper();
+    private ClassLoaderSwapper classLoaderSwapper = ClassLoaderSwapper.newCurrentThreadClassLoaderSwapper();
 
     private long jobId;
 
@@ -109,12 +108,15 @@ public class JobContainer extends AbstractContainer {
                 //拷贝一份新的配置
                 userConf = configuration.clone();
 
+                //预处理(job级别)
                 LOG.debug("jobContainer starts to do preHandle ...");
                 this.preHandle();
 
+                //通过配置信息，反射生成reader 和 writer， 并调用他们的init方法
                 LOG.debug("jobContainer starts to do init ...");
                 this.init();
 
+                //调用(plugin)reader 和 write的prepare
                 LOG.info("jobContainer starts to do prepare ...");
                 this.prepare();
 
@@ -126,15 +128,16 @@ public class JobContainer extends AbstractContainer {
                 LOG.info("jobContainer starts to do schedule ...");
                 this.schedule();
 
-                // 结束时的一些操作
+                //调用reader 和 write的prepare方法
                 LOG.debug("jobContainer starts to do post ...");
                 this.post();
 
+                //job结束后执行postHandle
                 LOG.debug("jobContainer starts to do postHandle ...");
                 this.postHandle();
 
+                //其他的插件，比如完成后 发邮件通知？  或者启动其他的任务？
                 LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
-
                 this.invokeHooks();
             }
         } catch (Throwable e) {
@@ -295,14 +298,12 @@ public class JobContainer extends AbstractContainer {
      * reader和writer的初始化
      */
     private void init() {
-        this.jobId = this.configuration.getLong(
-                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -1);
+        this.jobId = this.configuration.getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -1);
 
         if (this.jobId < 0) {
             LOG.info("Set jobId = 0");
             this.jobId = 0;
-            this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID,
-                                   this.jobId);
+            this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, this.jobId);
         }
 
         Thread.currentThread().setName("job-" + this.jobId);
@@ -322,8 +323,7 @@ public class JobContainer extends AbstractContainer {
     }
 
     private void preHandle() {
-        String handlerPluginTypeStr = this.configuration.getString(
-                CoreConstant.DATAX_JOB_PREHANDLER_PLUGINTYPE);
+        String handlerPluginTypeStr = this.configuration.getString(CoreConstant.DATAX_JOB_PREHANDLER_PLUGINTYPE);
         if (!StringUtils.isNotEmpty(handlerPluginTypeStr)) {
             return;
         }
@@ -331,22 +331,17 @@ public class JobContainer extends AbstractContainer {
         try {
             handlerPluginType = PluginType.valueOf(handlerPluginTypeStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw DataXException.asDataXException(
-                    FrameworkErrorCode.CONFIG_ERROR,
-                    String.format("Job preHandler's pluginType(%s) set error, reason(%s)", handlerPluginTypeStr.toUpperCase(), e.getMessage()));
+            throw DataXException
+                    .asDataXException(FrameworkErrorCode.CONFIG_ERROR, String.format("Job preHandler's pluginType(%s) set error, reason(%s)", handlerPluginTypeStr.toUpperCase(), e.getMessage()));
         }
 
-        String handlerPluginName = this.configuration.getString(
-                CoreConstant.DATAX_JOB_PREHANDLER_PLUGINNAME);
+        String handlerPluginName = this.configuration.getString(CoreConstant.DATAX_JOB_PREHANDLER_PLUGINNAME);
 
-        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
-                handlerPluginType, handlerPluginName));
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(handlerPluginType, handlerPluginName));
 
-        AbstractJobPlugin handler = LoadUtil.loadJobPlugin(
-                handlerPluginType, handlerPluginName);
+        AbstractJobPlugin handler = LoadUtil.loadJobPlugin(handlerPluginType, handlerPluginName);
 
-        JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
-                this.getContainerCommunicator());
+        JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(this.getContainerCommunicator());
         handler.setJobPluginCollector(jobPluginCollector);
 
         //todo configuration的安全性，将来必须保证
@@ -357,8 +352,7 @@ public class JobContainer extends AbstractContainer {
     }
 
     private void postHandle() {
-        String handlerPluginTypeStr = this.configuration.getString(
-                CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINTYPE);
+        String handlerPluginTypeStr = this.configuration.getString(CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINTYPE);
 
         if (!StringUtils.isNotEmpty(handlerPluginTypeStr)) {
             return;
@@ -398,6 +392,7 @@ public class JobContainer extends AbstractContainer {
     private int split() {
 
         //调整channelnumber， 优先根据 min(job.setting.speed.byte， job.setting.speed.record)     否则获取 job.setting.speed.channel
+        //其实就是根据 配置的全局最大速度/单个channel的最大速度  得到channle的个数
         this.adjustChannelNumber();
 
         if (this.needChannelNumber <= 0) {
@@ -414,6 +409,8 @@ public class JobContainer extends AbstractContainer {
         /**
          * 输入是reader和writer的parameter list，输出是content下面元素的list
          */
+
+        //这里返回的是 聚合了read  write  transformer配置信息的集合有几个
         List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(readerTaskConfigs, writerTaskConfigs, transformerList);
 
         LOG.debug("contentConfig configuration: " + JSON.toJSONString(contentConfig));
@@ -427,7 +424,7 @@ public class JobContainer extends AbstractContainer {
         int needChannelNumberByByte = Integer.MAX_VALUE;
         int needChannelNumberByRecord = Integer.MAX_VALUE;
 
-        //限制IO速度
+        //IO速度限制
         boolean isByteLimit = (this.configuration.getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 0) > 0);
         if (isByteLimit) {
             long globalLimitedByteSpeed = this.configuration.getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 10 * 1024 * 1024);
@@ -522,7 +519,6 @@ public class JobContainer extends AbstractContainer {
             LOG.info("Running by {} Mode.", executeMode);
 
             this.startTransferTimeStamp = System.currentTimeMillis();
-
 
             //这里开始调度所有的taskgroup
             scheduler.schedule(taskGroupConfigs);
@@ -696,10 +692,8 @@ public class JobContainer extends AbstractContainer {
     }
 
     private void prepareJobReader() {
-        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
-                PluginType.READER, this.readerPluginName));
-        LOG.info(String.format("DataX Reader.Job [%s] do prepare work .",
-                               this.readerPluginName));
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(PluginType.READER, this.readerPluginName));
+        LOG.info(String.format("DataX Reader.Job [%s] do prepare work .", this.readerPluginName));
         this.jobReader.prepare();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
@@ -761,22 +755,16 @@ public class JobContainer extends AbstractContainer {
         if (readerTasksConfigs.size() != writerTasksConfigs.size()) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-                    String.format("reader切分的task数目[%d]不等于writer切分的task数目[%d].",
-                                  readerTasksConfigs.size(), writerTasksConfigs.size())
-                                                 );
+                    String.format("reader切分的task数目[%d]不等于writer切分的task数目[%d].", readerTasksConfigs.size(), writerTasksConfigs.size()));
         }
 
         List<Configuration> contentConfigs = new ArrayList<Configuration>();
         for (int i = 0; i < readerTasksConfigs.size(); i++) {
             Configuration taskConfig = Configuration.newDefault();
-            taskConfig.set(CoreConstant.JOB_READER_NAME,
-                           this.readerPluginName);
-            taskConfig.set(CoreConstant.JOB_READER_PARAMETER,
-                           readerTasksConfigs.get(i));
-            taskConfig.set(CoreConstant.JOB_WRITER_NAME,
-                           this.writerPluginName);
-            taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
-                           writerTasksConfigs.get(i));
+            taskConfig.set(CoreConstant.JOB_READER_NAME, this.readerPluginName);
+            taskConfig.set(CoreConstant.JOB_READER_PARAMETER, readerTasksConfigs.get(i));
+            taskConfig.set(CoreConstant.JOB_WRITER_NAME, this.writerPluginName);
+            taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER, writerTasksConfigs.get(i));
 
             if (transformerConfigs != null && transformerConfigs.size() > 0) {
                 taskConfig.set(CoreConstant.JOB_TRANSFORMER, transformerConfigs);

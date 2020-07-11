@@ -26,11 +26,13 @@ public final class JobAssignUtil {
     public static List<Configuration> assignFairly(Configuration configuration, int channelNumber, int channelsPerTaskGroup) {
         Validate.isTrue(configuration != null, "框架获得的 Job 不能为 null.");
 
+        //所有的task
         List<Configuration> contentConfig = configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
         Validate.isTrue(contentConfig.size() > 0, "框架获得的切分后的 Job 无内容.");
 
         Validate.isTrue(channelNumber > 0 && channelsPerTaskGroup > 0, "每个channel的平均task数[averTaskPerChannel]，channel数目[channelNumber]，每个taskGroup的平均channel数[channelsPerTaskGroup]都应该为正数");
 
+        //要生成的 taskgroup 数量
         int taskGroupNumber = (int) Math.ceil(1.0 * channelNumber / channelsPerTaskGroup);
 
         Configuration aTaskConfig = contentConfig.get(0);
@@ -60,6 +62,7 @@ public final class JobAssignUtil {
 
     private static void adjustChannelNumPerTaskGroup(List<Configuration> taskGroupConfig, int channelNumber) {
         int taskGroupNumber = taskGroupConfig.size();
+        // 平均每个group里面的channel数
         int avgChannelsPerTaskGroup = channelNumber / taskGroupNumber;
         int remainderChannelCount = channelNumber % taskGroupNumber;
         // 表示有 remainderChannelCount 个 taskGroup,其对应 Channel 个数应该为：avgChannelsPerTaskGroup + 1；
@@ -129,6 +132,7 @@ public final class JobAssignUtil {
      * </pre>
      */
     private static List<Configuration> doAssign(LinkedHashMap<String, List<Integer>> resourceMarkAndTaskIdMap, Configuration jobConfiguration, int taskGroupNumber) {
+        //所有task数量
         List<Configuration> contentConfig = jobConfiguration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
 
         Configuration taskGroupTemplate = jobConfiguration.clone();
