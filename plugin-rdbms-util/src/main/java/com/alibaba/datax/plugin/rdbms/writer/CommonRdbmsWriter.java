@@ -41,7 +41,7 @@ public class CommonRdbmsWriter {
             OriginalConfPretreatmentUtil.doPretreatment(originalConfig, this.dataBaseType);
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
-                    originalConfig.toJSON());
+                      originalConfig.toJSON());
         }
 
         /*目前只支持MySQL Writer跟Oracle Writer;检查PreSQL跟PostSQL语法以及insert，delete权限*/
@@ -63,7 +63,7 @@ public class CommonRdbmsWriter {
             String username = originalConfig.getString(Key.USERNAME);
             String password = originalConfig.getString(Key.PASSWORD);
             List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
-                    Object.class);
+                                                              Object.class);
 
             for (int i = 0, len = connections.size(); i < len; i++) {
                 Configuration connConf = Configuration.from(connections.get(i).toString());
@@ -92,9 +92,9 @@ public class CommonRdbmsWriter {
                 String password = originalConfig.getString(Key.PASSWORD);
 
                 List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
-                        Object.class);
+                                                            Object.class);
                 Configuration connConf = Configuration.from(conns.get(0)
-                        .toString());
+                                                                 .toString());
 
                 // 这里的 jdbcUrl 已经 append 了合适后缀参数
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
@@ -104,7 +104,7 @@ public class CommonRdbmsWriter {
                 originalConfig.set(Key.TABLE, table);
 
                 List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
-                        String.class);
+                                                              String.class);
                 List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
                         preSqls, table);
 
@@ -114,9 +114,9 @@ public class CommonRdbmsWriter {
                     originalConfig.remove(Key.PRE_SQL);
 
                     Connection conn = DBUtil.getConnection(dataBaseType,
-                            jdbcUrl, username, password);
+                                                           jdbcUrl, username, password);
                     LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
-                            StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
+                             StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
 
                     WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl, dataBaseType);
                     DBUtil.closeDBResources(null, null, conn);
@@ -124,7 +124,7 @@ public class CommonRdbmsWriter {
             }
 
             LOG.debug("After job prepare(), originalConfig now is:[\n{}\n]",
-                    originalConfig.toJSON());
+                      originalConfig.toJSON());
         }
 
         public List<Configuration> split(Configuration originalConfig,
@@ -145,7 +145,7 @@ public class CommonRdbmsWriter {
                 String table = originalConfig.getString(Key.TABLE);
 
                 List<String> postSqls = originalConfig.getList(Key.POST_SQL,
-                        String.class);
+                                                               String.class);
                 List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
                         postSqls, table);
 
@@ -154,7 +154,7 @@ public class CommonRdbmsWriter {
                     originalConfig.remove(Key.POST_SQL);
 
                     Connection conn = DBUtil.getConnection(this.dataBaseType,
-                            jdbcUrl, username, password);
+                                                           jdbcUrl, username, password);
 
                     LOG.info(
                             "Begin to execute postSqls:[{}]. context info:{}.",
@@ -238,21 +238,21 @@ public class CommonRdbmsWriter {
             this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
 
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]",
-                    this.jdbcUrl, this.table);
+                                          this.jdbcUrl, this.table);
         }
 
         public void prepare(Configuration writerSliceConfig) {
             Connection connection = DBUtil.getConnection(this.dataBaseType,
-                    this.jdbcUrl, username, password);
+                                                         this.jdbcUrl, username, password);
 
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    this.dataBaseType, BASIC_MESSAGE);
+                                         this.dataBaseType, BASIC_MESSAGE);
 
             int tableNumber = writerSliceConfig.getInt(
                     Constant.TABLE_NUMBER_MARK);
             if (tableNumber != 1) {
                 LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
-                        StringUtils.join(this.preSqls, ";"), BASIC_MESSAGE);
+                         StringUtils.join(this.preSqls, ";"), BASIC_MESSAGE);
                 WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE, dataBaseType);
             }
 
@@ -264,7 +264,7 @@ public class CommonRdbmsWriter {
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
             this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
-                    this.table, StringUtils.join(this.columns, ","));
+                                                              this.table, StringUtils.join(this.columns, ","));
             // 写数据库的SQL语句
             calcWriteRecordSql();
 
@@ -313,9 +313,9 @@ public class CommonRdbmsWriter {
                                Configuration writerSliceConfig,
                                TaskPluginCollector taskPluginCollector) {
             Connection connection = DBUtil.getConnection(this.dataBaseType,
-                    this.jdbcUrl, username, password);
+                                                         this.jdbcUrl, username, password);
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    this.dataBaseType, BASIC_MESSAGE);
+                                         this.dataBaseType, BASIC_MESSAGE);
             startWriteWithConnection(recordReceiver, taskPluginCollector, connection);
         }
 
@@ -330,10 +330,10 @@ public class CommonRdbmsWriter {
             }
 
             Connection connection = DBUtil.getConnection(this.dataBaseType,
-                    this.jdbcUrl, username, password);
+                                                         this.jdbcUrl, username, password);
 
             LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
-                    StringUtils.join(this.postSqls, ";"), BASIC_MESSAGE);
+                     StringUtils.join(this.postSqls, ";"), BASIC_MESSAGE);
             WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE, dataBaseType);
             DBUtil.closeDBResources(null, null, connection);
         }
@@ -452,7 +452,7 @@ public class CommonRdbmsWriter {
                 // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                 case Types.DATE:
                     if (this.resultSetMetaData.getRight().get(columnIndex)
-                            .equalsIgnoreCase("year")) {
+                                              .equalsIgnoreCase("year")) {
                         if (column.asBigInteger() == null) {
                             preparedStatement.setString(columnIndex + 1, null);
                         } else {
@@ -533,11 +533,11 @@ public class CommonRdbmsWriter {
                                     String.format(
                                             "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
                                             this.resultSetMetaData.getLeft()
-                                                    .get(columnIndex),
+                                                                  .get(columnIndex),
                                             this.resultSetMetaData.getMiddle()
-                                                    .get(columnIndex),
+                                                                  .get(columnIndex),
                                             this.resultSetMetaData.getRight()
-                                                    .get(columnIndex)));
+                                                                  .get(columnIndex)));
             }
             return preparedStatement;
         }

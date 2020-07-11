@@ -5,6 +5,7 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,8 +28,7 @@ public abstract class AbstractCollector {
 
     public void registerTGCommunication(List<Configuration> taskGroupConfigurationList) {
         for (Configuration config : taskGroupConfigurationList) {
-            int taskGroupId = config.getInt(
-                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+            int taskGroupId = config.getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
             LocalTGCommunicationManager.registerTaskGroupCommunication(taskGroupId, new Communication());
         }
     }

@@ -9,10 +9,11 @@ import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
-import java.util.List;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public abstract class AbstractScheduler {
     private static final Logger LOG = LoggerFactory
@@ -33,13 +34,13 @@ public abstract class AbstractScheduler {
     }
 
     public void schedule(List<Configuration> configurations) {
-        Validate.notNull(configurations,"scheduler配置不能为空");
+        Validate.notNull(configurations, "scheduler配置不能为空");
 
-        int jobReportIntervalInMillSec = configurations.get(0).getInt( CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL, 30000);
+        int jobReportIntervalInMillSec = configurations.get(0).getInt(CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL, 30000);
 
-        int jobSleepIntervalInMillSec = configurations.get(0).getInt( CoreConstant.DATAX_CORE_CONTAINER_JOB_SLEEPINTERVAL, 10000);
+        int jobSleepIntervalInMillSec = configurations.get(0).getInt(CoreConstant.DATAX_CORE_CONTAINER_JOB_SLEEPINTERVAL, 10000);
 
-        this.jobId = configurations.get(0).getLong( CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+        this.jobId = configurations.get(0).getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
 
         errorLimit = new ErrorRecordChecker(configurations.get(0));
 
@@ -117,8 +118,7 @@ public abstract class AbstractScheduler {
     private int calculateTaskCount(List<Configuration> configurations) {
         int totalTasks = 0;
         for (Configuration taskGroupConfiguration : configurations) {
-            totalTasks += taskGroupConfiguration.getListConfiguration(
-                    CoreConstant.DATAX_JOB_CONTENT).size();
+            totalTasks += taskGroupConfiguration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT).size();
         }
         return totalTasks;
     }
@@ -128,5 +128,5 @@ public abstract class AbstractScheduler {
 //        return jobInfo.getData() == State.KILLING.value();
 //    }
 
-    protected  abstract  boolean isJobKilling(Long jobId);
+    protected abstract boolean isJobKilling(Long jobId);
 }

@@ -28,15 +28,11 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import com.alibaba.fastjson.JSON;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 public class TaskGroupContainer extends AbstractContainer {
 
@@ -121,14 +117,11 @@ public class TaskGroupContainer extends AbstractContainer {
             List<Configuration> taskConfigs = this.configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("taskGroup[{}]'s task configs[{}]", this.taskGroupId,
-                          JSON.toJSONString(taskConfigs));
+                LOG.debug("taskGroup[{}]'s task configs[{}]", this.taskGroupId, JSON.toJSONString(taskConfigs));
             }
 
             int taskCountInThisTaskGroup = taskConfigs.size();
-            LOG.info(String.format(
-                    "taskGroupId=[%d] start [%d] channels for [%d] tasks.",
-                    this.taskGroupId, channelNumber, taskCountInThisTaskGroup));
+            LOG.info(String.format("taskGroupId=[%d] start [%d] channels for [%d] tasks.", this.taskGroupId, channelNumber, taskCountInThisTaskGroup));
 
             this.containerCommunicator.registerCommunication(taskConfigs);
 
@@ -175,8 +168,7 @@ public class TaskGroupContainer extends AbstractContainer {
                         Long taskStartTime = taskStartTimeMap.get(taskId);
                         if (taskStartTime != null) {
                             Long usedTime = System.currentTimeMillis() - taskStartTime;
-                            LOG.info("taskGroup[{}] taskId[{}] is successed, used[{}]ms",
-                                     this.taskGroupId, taskId, usedTime);
+                            LOG.info("taskGroup[{}] taskId[{}] is successed, used[{}]ms", this.taskGroupId, taskId, usedTime);
                             //usedTime*1000*1000 转换成PerfRecord记录的ns，这里主要是简单登记，进行最长任务的打印。因此增加特定静态方法
                             PerfRecord.addPerfRecord(taskGroupId, taskId, PerfRecord.PHASE.TASK_TOTAL, taskStartTime, usedTime * 1000L * 1000L);
                             taskStartTimeMap.remove(taskId);
@@ -187,11 +179,8 @@ public class TaskGroupContainer extends AbstractContainer {
 
                 // 2.发现该taskGroup下taskExecutor的总状态失败则汇报错误
                 if (failedOrKilled) {
-                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
-                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-
-                    throw DataXException.asDataXException(
-                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, lastTaskGroupContainerCommunication.getThrowable());
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+                    throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, lastTaskGroupContainerCommunication.getThrowable());
                 }
 
                 //3.有任务未执行，且正在运行的任务数小于最大通道限制
@@ -241,9 +230,7 @@ public class TaskGroupContainer extends AbstractContainer {
                 //4.任务列表为空，executor已结束, 搜集状态为success--->成功
                 if (taskQueue.isEmpty() && isAllTaskDone(runTasks) && containerCommunicator.collectState() == State.SUCCEEDED) {
                     // 成功的情况下，也需要汇报一次。否则在任务结束非常快的情况下，采集的信息将会不准确
-                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
-                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
                     LOG.info("taskGroup[{}] completed it's tasks.", this.taskGroupId);
                     break;
                 }
@@ -251,11 +238,8 @@ public class TaskGroupContainer extends AbstractContainer {
                 // 5.如果当前时间已经超出汇报时间的interval，那么我们需要马上汇报
                 long now = System.currentTimeMillis();
                 if (now - lastReportTimeStamp > reportIntervalInMillSec) {
-                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
-                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
                     lastReportTimeStamp = now;
-
                     //taskMonitor对于正在运行的task，每reportIntervalInMillSec进行检查
                     for (TaskExecutor taskExecutor : runTasks) {
                         taskMonitor.report(taskExecutor.getTaskId(), this.containerCommunicator.getCommunication(taskExecutor.getTaskId()));
@@ -414,23 +398,17 @@ public class TaskGroupContainer extends AbstractContainer {
                                            String.format("%d-%d-%d-writer",
                                                          jobId, taskGroupId, this.taskId));
             //通过设置thread的contextClassLoader，即可实现同步和主程序不通的加载器
-            this.writerThread.setContextClassLoader(LoadUtil.getJarLoader(
-                    PluginType.WRITER, this.taskConfig.getString(
-                            CoreConstant.JOB_WRITER_NAME)));
+            this.writerThread.setContextClassLoader(LoadUtil.getJarLoader(PluginType.WRITER, this.taskConfig.getString(CoreConstant.JOB_WRITER_NAME)));
 
             /**
              * 生成readerThread
              */
             readerRunner = (ReaderRunner) generateRunner(PluginType.READER, transformerInfoExecs);
-            this.readerThread = new Thread(readerRunner,
-                                           String.format("%d-%d-%d-reader",
-                                                         jobId, taskGroupId, this.taskId));
+            this.readerThread = new Thread(readerRunner, String.format("%d-%d-%d-reader", jobId, taskGroupId, this.taskId));
             /**
              * 通过设置thread的contextClassLoader，即可实现同步和主程序不通的加载器
              */
-            this.readerThread.setContextClassLoader(LoadUtil.getJarLoader(
-                    PluginType.READER, this.taskConfig.getString(
-                            CoreConstant.JOB_READER_NAME)));
+            this.readerThread.setContextClassLoader(LoadUtil.getJarLoader(PluginType.READER, this.taskConfig.getString(CoreConstant.JOB_READER_NAME)));
         }
 
         public void doStart() {

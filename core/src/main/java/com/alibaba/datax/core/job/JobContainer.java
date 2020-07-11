@@ -28,13 +28,14 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.fastjson.JSON;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -902,7 +903,7 @@ public class JobContainer extends AbstractContainer {
         }
 
         for (taskGroupConfigIndex = equalDivisionStartIndex;
-                taskGroupConfigIndex < taskGroupConfigs.size(); ) {
+             taskGroupConfigIndex < taskGroupConfigs.size(); ) {
             Configuration taskGroupConfig = taskGroupConfigs.get(taskGroupConfigIndex);
             taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL,
                                 channelsPerTaskGroup);
@@ -923,10 +924,8 @@ public class JobContainer extends AbstractContainer {
     }
 
     private void postJobWriter() {
-        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
-                PluginType.WRITER, this.writerPluginName));
-        LOG.info("DataX Writer.Job [{}] do post work.",
-                 this.writerPluginName);
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(PluginType.WRITER, this.writerPluginName));
+        LOG.info("DataX Writer.Job [{}] do post work.", this.writerPluginName);
         this.jobWriter.post();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
     }

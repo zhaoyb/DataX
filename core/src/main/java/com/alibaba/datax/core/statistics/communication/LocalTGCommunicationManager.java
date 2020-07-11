@@ -11,8 +11,7 @@ public final class LocalTGCommunicationManager {
     private static Map<Integer, Communication> taskGroupCommunicationMap =
             new ConcurrentHashMap<Integer, Communication>();
 
-    public static void registerTaskGroupCommunication(
-            int taskGroupId, Communication communication) {
+    public static void registerTaskGroupCommunication(int taskGroupId, Communication communication) {
         taskGroupCommunicationMap.put(taskGroupId, communication);
     }
 
@@ -48,7 +47,7 @@ public final class LocalTGCommunicationManager {
                                                     final Communication communication) {
         Validate.isTrue(taskGroupCommunicationMap.containsKey(
                 taskGroupId), String.format("taskGroupCommunicationMap中没有注册taskGroupId[%d]的Communication，" +
-                "无法更新该taskGroup的信息", taskGroupId));
+                                                    "无法更新该taskGroup的信息", taskGroupId));
         taskGroupCommunicationMap.put(taskGroupId, communication);
     }
 
